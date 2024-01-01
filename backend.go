@@ -46,6 +46,36 @@ func writeDB(t Task) {
 	})
 }
 
+func readDB(id int)  Task{
+	db, err := bolt.Open("test.db", 0600, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	var t Task
+	tPointer := &t
+	viewErr := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("testBucket"))
+		v := b.Get([]byte{byte(id)})
+		data := decode(v)
+
+		(*tPointer).title = data[0]
+		(*tPointer).description = data[1]
+		(*tPointer).status = data[2]
+
+		return nil
+	})
+
+	t.id = id
+
+	if viewErr != nil {
+		fmt.Println(viewErr)
+	}
+	
+
+	return t
+}
+
 
 //converts string array/slice into byte slice, in order to be passed into writeDB().
 //Alternative approach involves nesting buckets within the database, but I prefer this method.
@@ -60,4 +90,15 @@ func encode(title string, description string, status string) []byte {
 	// }
 
 	return buf.Bytes()
+}
+
+func decode(bs []byte) []string {
+	buf := bytes.NewBuffer(bs)
+	dec := gob.NewDecoder(buf)
+
+	var td []string
+	err := dec.Decode(&td)
+	fmt.Println(err)
+
+	return td
 }

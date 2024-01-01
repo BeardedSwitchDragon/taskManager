@@ -6,16 +6,16 @@ import (
 
 func main() {
 
-	testTask := Task{
-		id: 0001,
-		title: "erm this is a test!!!",
-		description: "im testing this task (description)",
-		status: "incomplete",
+	// testTask := Task{
+	// 	id: 0001,
+	// 	title: "erm this is a test!!!",
+	// 	description: "im testing this task (description)",
+	// 	status: "incomplete",
 
-	}
+	// }
 
-	writeDB(testTask)
-	fmt.Println("Hello world!")
+	testTask := readDB(0001)
+	fmt.Println(testTask)
 
 }
 
