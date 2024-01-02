@@ -31,7 +31,7 @@ func createDB() *bolt.DB {
 }
 
 
-
+//Can double as an update function.
 func writeDB(t Task) {
 	db, err := bolt.Open("test.db", 0600, nil)
 	if err != nil {
@@ -52,8 +52,10 @@ func readDB(id int)  Task{
 		fmt.Println(err)
 	}
 
+	//Creates pointer so task can be referred to in anonymous function
 	var t Task
 	tPointer := &t
+
 	viewErr := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("testBucket"))
 		v := b.Get([]byte{byte(id)})
@@ -76,6 +78,20 @@ func readDB(id int)  Task{
 	return t
 }
 
+func deleteDB(id int) {
+	db, err := bolt.Open("test.db", 0600, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+	deleteErr := db.Update(func(tx *bolt.Tx) error {
+		//Deletes bucket item given id parameter in parent function
+		return tx.Bucket([]byte("testBucket")).Delete([]byte{byte(id)})
+	})
+
+	if deleteErr != nil {
+		fmt.Println(deleteErr)
+	}
+}
 
 //converts string array/slice into byte slice, in order to be passed into writeDB().
 //Alternative approach involves nesting buckets within the database, but I prefer this method.
