@@ -12,11 +12,15 @@ import (
 func main() {
 	r := gin.Default()
 	r.GET("/fetch/all", func(c *gin.Context) {
-		var f Filter
-		f.unspecified()
-		tasks := getTasks(f)
-		j, _ := json.Marshal(tasks)
-		j, _ = json.MarshalIndent(tasks, "", " ")
+		var j []byte
+		go func() {
+			var f Filter
+			f.unspecified()
+			tasks := getTasks(f)
+			j, _ = json.Marshal(tasks)
+			j, _ = json.MarshalIndent(tasks, "", " ")
+		}()
+		
 		c.JSON(200, string(j))
 
 	})
@@ -25,17 +29,27 @@ func main() {
 	//DELETE a certain task
 
 	r.DELETE("/task/:id", func(c *gin.Context) {
-		id, _ := strconv.Atoi(c.Param("id"))
-		err := deleteTask(id)
-		if err != nil {
+		go func() {
+			id, _ := strconv.Atoi(c.Param("id"))
+			err := deleteTask(id)
+			if err != nil {
 	
-			c.String(http.StatusBadRequest, "something went wrnog")
-		} else {
-			c.String(http.StatusOK, "successfully deleted")
-		}
+				c.String(http.StatusBadRequest, "something went wrnog")
+			} else {
+				c.String(http.StatusOK, "successfully deleted")
+			}
+		}()
+		
 	})
 
-	r.Run()
+	go func() {
+		if err := r.Run(":8080"); err != nil {
+			panic(err)
+		}
+	}()
+
+	// Keep the program running
+	select {}
 }
 
 // func tasksToMaps(tasks []Task) map[string]string {
