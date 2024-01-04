@@ -3,8 +3,10 @@ package main
 import (
 
 	"github.com/gin-gonic/gin"
-	"fmt"
+	// "fmt"
 	"encoding/json"
+	"net/http"
+	"strconv"
 )
 
 func main() {
@@ -15,9 +17,22 @@ func main() {
 		tasks := getTasks(f)
 		j, _ := json.Marshal(tasks)
 		j, _ = json.MarshalIndent(tasks, "", " ")
-		fmt.Println(string(j))
 		c.JSON(200, string(j))
 
+	})
+
+
+	//DELETE a certain task
+
+	r.DELETE("/task/:id", func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		err := deleteTask(id)
+		if err != nil {
+	
+			c.String(http.StatusBadRequest, "something went wrnog")
+		} else {
+			c.String(http.StatusOK, "successfully deleted")
+		}
 	})
 
 	r.Run()

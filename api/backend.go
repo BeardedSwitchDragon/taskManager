@@ -120,7 +120,7 @@ func getTasks(f Filter) []Task {
 	return result
 }
 
-func deleteDB(Id int) {
+func deleteTask(Id int) error {
 	db, e := bolt.Open("test.db", 0600, nil)
 	if e != nil {
 		fmt.Println(e)
@@ -131,8 +131,9 @@ func deleteDB(Id int) {
 	})
 
 	if deleteErr != nil {
-		fmt.Println(deleteErr)
+		return deleteErr
 	}
+	return nil
 }
 
 //converts string array/slice into byte slice, in order to be passed into writeDB().
