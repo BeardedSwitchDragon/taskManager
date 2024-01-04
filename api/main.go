@@ -3,7 +3,7 @@ package main
 import (
 
 	"github.com/gin-gonic/gin"
-	// "fmt"
+	"fmt"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -12,17 +12,26 @@ import (
 func main() {
 	r := gin.Default()
 	r.GET("/fetch/all", func(c *gin.Context) {
-		var j []byte
+		j := make(chan []byte)
+		// jpointer := &j
 		go func() {
+			defer close(j)
+			
 			var f Filter
 			f.unspecified()
 			tasks := getTasks(f)
-			j, _ = json.Marshal(tasks)
-			j, _ = json.MarshalIndent(tasks, "", " ")
+			
+			d, _ := json.Marshal(tasks)
+			d, _ = json.MarshalIndent(tasks, "", " ")
+			j <- d
+			fmt.Println(d)
+			
+	
 		}()
+		// fmt.Println(*jpointer)
 		
-		c.JSON(200, string(j))
-
+		c.JSON(200, string(<-j))
+		
 	})
 
 

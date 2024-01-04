@@ -85,6 +85,8 @@ func getTasks(f Filter) []Task {
 		fmt.Println(e)
 	}
 
+	defer db.Close()
+
 	var result []Task
 	viewErr := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("testBucket"))
