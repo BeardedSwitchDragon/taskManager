@@ -7,15 +7,19 @@ import (
 func main() {
 
 	// testTask := Task{
-	// 	id: 0001,
-	// 	title: "erm this is a test!!!",
-	// 	description: "im testing this task (description)",
+	// 	id: 0003,
+	// 	title: "!!!",
+	// 	description: "description)",
 	// 	status: "incomplete",
 
 	// }
 
-	testTask := readDB(0001)
-	fmt.Println(testTask)
+	filter := newFilter()
+	
+	filter.title = "test"
+	fmt.Println(filter)
+	tasks := getTasks(filter)
+	fmt.Println(tasks)
 
 }
 

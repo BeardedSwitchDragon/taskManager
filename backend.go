@@ -5,23 +5,24 @@ import (
 	"fmt"
 	"bytes"
 	"encoding/gob"
+	"strings"
 
 )
 
 //Initialize database
 func createDB() *bolt.DB {
-	db, err := bolt.Open("test.db", 0600, nil)
-	if err != nil {
-		fmt.Println(err)
+	db, e := bolt.Open("test.db", 0600, nil)
+	if e != nil {
+		fmt.Println(e)
 	}
 
 	//Creates a bucket - a set of key value pairs.
 	db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucket([]byte("testBucket"))
-		if err != nil {
-			fmt.Println(err)
+		_, e := tx.CreateBucket([]byte("testBucket"))
+		if e != nil {
+			fmt.Println(e)
 			
-			return err
+			return e
 		}
 		return nil
 	})
@@ -33,23 +34,23 @@ func createDB() *bolt.DB {
 
 //Can double as an update function.
 func writeDB(t Task) {
-	db, err := bolt.Open("test.db", 0600, nil)
-	if err != nil {
-		fmt.Println(err)
+	db, e := bolt.Open("test.db", 0600, nil)
+	if e != nil {
+		fmt.Println(e)
 	}
 	db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("testBucket"))
 		idBS, dBS := []byte{byte(t.id)}, encode(t.title, t.description, t.status)
 		fmt.Println(idBS)
-		err := b.Put(idBS, dBS)
-		return err
+		e := b.Put(idBS, dBS)
+		return e
 	})
 }
 
-func readDB(id int)  Task{
-	db, err := bolt.Open("test.db", 0600, nil)
-	if err != nil {
-		fmt.Println(err)
+func getTask(id int)  Task{
+	db, e := bolt.Open("test.db", 0600, nil)
+	if e != nil {
+		fmt.Println(e)
 	}
 
 	//Creates pointer so task can be referred to in anonymous function
@@ -78,10 +79,51 @@ func readDB(id int)  Task{
 	return t
 }
 
+func getTasks(f Filter) []Task {
+	db, e := bolt.Open("test.db", 0600, nil)
+	if e != nil {
+		fmt.Println(e)
+	}
+
+	var result []Task
+	viewErr := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("testBucket"))
+		b.ForEach(func(k, v []byte) error {
+			//Logic where we check if it matches the filter
+			d := decode(v)
+			t := Task{
+				title: d[0],
+				description: d[1],
+				status: d[2],
+			}
+
+			if strings.Contains(t.title, f.title){
+				result = append(result, t)
+				return nil
+			} else if strings.Contains(t.description, f.description){
+				result = append(result, t)
+				return nil
+			} else if strings.Contains(t.status, f.status){
+				result = append(result, t)
+				return nil
+			}
+
+			return fmt.Errorf("404: Nothing found.")
+		})
+		return nil
+	})
+
+	if viewErr != nil {
+		fmt.Println(viewErr)
+	}
+
+	return result
+}
+
 func deleteDB(id int) {
-	db, err := bolt.Open("test.db", 0600, nil)
-	if err != nil {
-		fmt.Println(err)
+	db, e := bolt.Open("test.db", 0600, nil)
+	if e != nil {
+		fmt.Println(e)
 	}
 	deleteErr := db.Update(func(tx *bolt.Tx) error {
 		//Deletes bucket item given id parameter in parent function
@@ -98,10 +140,10 @@ func deleteDB(id int) {
 func encode(title string, description string, status string) []byte {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
-	err := enc.Encode([]string{title, description, status})
-	fmt.Println(err)
-	// if  err != nil {
-	// 	log.Fatal(err)
+	e := enc.Encode([]string{title, description, status})
+	fmt.Println(e)
+	// if  e != nil {
+	// 	log.Fatal(e)
 	// 	return
 	// }
 
@@ -113,8 +155,8 @@ func decode(bs []byte) []string {
 	dec := gob.NewDecoder(buf)
 
 	var td []string
-	err := dec.Decode(&td)
-	fmt.Println(err)
+	e := dec.Decode(&td)
+	fmt.Println(e)
 
 	return td
 }
