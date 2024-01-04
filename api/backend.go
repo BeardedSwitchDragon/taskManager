@@ -40,14 +40,14 @@ func writeDB(t Task) {
 	}
 	db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("testBucket"))
-		idBS, dBS := []byte{byte(t.id)}, encode(t.title, t.description, t.status)
-		fmt.Println(idBS)
-		e := b.Put(idBS, dBS)
+		IdBS, dBS := []byte{byte(t.Id)}, encode(t.Title, t.Description, t.Status)
+		fmt.Println(IdBS)
+		e := b.Put(IdBS, dBS)
 		return e
 	})
 }
 
-func getTask(id int)  Task{
+func getTask(Id int)  Task{
 	db, e := bolt.Open("test.db", 0600, nil)
 	if e != nil {
 		fmt.Println(e)
@@ -59,17 +59,17 @@ func getTask(id int)  Task{
 
 	viewErr := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("testBucket"))
-		v := b.Get([]byte{byte(id)})
+		v := b.Get([]byte{byte(Id)})
 		data := decode(v)
 
-		(*tPointer).title = data[0]
-		(*tPointer).description = data[1]
-		(*tPointer).status = data[2]
+		(*tPointer).Title = data[0]
+		(*tPointer).Description = data[1]
+		(*tPointer).Status = data[2]
 
 		return nil
 	})
 
-	t.id = id
+	t.Id = Id
 
 	if viewErr != nil {
 		fmt.Println(viewErr)
@@ -92,18 +92,18 @@ func getTasks(f Filter) []Task {
 			//Logic where we check if it matches the filter
 			d := decode(v)
 			t := Task{
-				title: d[0],
-				description: d[1],
-				status: d[2],
+				Title: d[0],
+				Description: d[1],
+				Status: d[2],
 			}
 
-			if strings.Contains(t.title, f.title){
+			if strings.Contains(t.Title, f.Title){
 				result = append(result, t)
 				return nil
-			} else if strings.Contains(t.description, f.description){
+			} else if strings.Contains(t.Description, f.Description){
 				result = append(result, t)
 				return nil
-			} else if strings.Contains(t.status, f.status){
+			} else if strings.Contains(t.Status, f.Status){
 				result = append(result, t)
 				return nil
 			}
@@ -120,14 +120,14 @@ func getTasks(f Filter) []Task {
 	return result
 }
 
-func deleteDB(id int) {
+func deleteDB(Id int) {
 	db, e := bolt.Open("test.db", 0600, nil)
 	if e != nil {
 		fmt.Println(e)
 	}
 	deleteErr := db.Update(func(tx *bolt.Tx) error {
-		//Deletes bucket item given id parameter in parent function
-		return tx.Bucket([]byte("testBucket")).Delete([]byte{byte(id)})
+		//Deletes bucket item given Id parameter in parent function
+		return tx.Bucket([]byte("testBucket")).Delete([]byte{byte(Id)})
 	})
 
 	if deleteErr != nil {
@@ -137,10 +137,10 @@ func deleteDB(id int) {
 
 //converts string array/slice into byte slice, in order to be passed into writeDB().
 //Alternative approach involves nesting buckets within the database, but I prefer this method.
-func encode(title string, description string, status string) []byte {
+func encode(Title string, Description string, Status string) []byte {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
-	e := enc.Encode([]string{title, description, status})
+	e := enc.Encode([]string{Title, Description, Status})
 	fmt.Println(e)
 	// if  e != nil {
 	// 	log.Fatal(e)

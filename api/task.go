@@ -1,28 +1,28 @@
 package main
 
 type Task struct {
-	id int
-	title string
-	description string
-	status string
+	Id int `json:"id"`
+	Title string `json:"title"`
+	Description string `json:"description"`
+	Status string `json:"status"`
 }
 
 type Filter struct {
-	title string
-	description string
-	status string
+	Title string
+	Description string
+	Status string
 }
 
 func (f Filter) unspecified() {
-	f.title, f.description, f.status = "", "", ""
+	f.Title, f.Description, f.Status = "", "", ""
 }
 
 
 //Uses undefined character as default that is universally understood to be an invalid character type.
 func newFilter() Filter {
 	return Filter{
-		title: "𑨩",
-		description: "𑨩",
-		status: "𑨩",
+		Title: "𑨩",
+		Description: "𑨩",
+		Status: "𑨩",
 	}
 } 
