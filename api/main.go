@@ -10,17 +10,21 @@ import (
 
 func main() {
 	r := gin.Default()
-	fetch := r.Group("/fetch")
-	fetch.GET("/", fetchTasksApi)
+	//Fetch group, task group respectively.
+	fg := r.Group("/fetch")
+	tg := r.Group("/task")
+
+	fg.GET("/", fetchTasksApi)
 
 	//DELETE a certain task
-
-	r.DELETE("/task/:id", deleteTaskApi)
+	tg.DELETE("/:id", deleteTaskApi)
 	go func() {
 		if err := r.Run(":8080"); err != nil {
 			panic(err)
 		}
 	}()
+
+	tg.POST("/", createTaskApi)
 
 	select {}
 
@@ -42,13 +46,31 @@ func deleteTaskApi(c *gin.Context) {
 
 }
 
+func createTaskApi(c *gin.Context) {
+	go func() {
+		// title, d, s := c.Query("title"), c.Query("description"), c.Query("status")
+		var empty Filter
+		empty.unspecified()
+		existingTasks := getTasks(empty)
+		t := Task {
+			Id: len(existingTasks) + 1,
+			Title: c.Query("title"),
+			Description: c.Query("description"),
+			Status: c.Query("status"),
+		}
+		writeDB(t)
+
+	}()
+	
+}
+
 
 //fetch task function
 func fetchTasksApi(c *gin.Context) {
 	j := make(chan []byte)
 	go func() {
 		defer close(j)
-		f := newFilter()
+		var f Filter
 		t, d, s := c.Query("title"), c.Query("description"), c.Query("status")
 
 		if t != "" {
