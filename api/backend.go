@@ -91,6 +91,8 @@ func getTasks(f Filter) []Task {
 	var result []Task
 	viewErr := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("testBucket"))
+		matchFound := false
+
 		b.ForEach(func(k, v []byte) error {
 			//Logic where we check if it matches the filter
 			id, _ := strconv.Atoi(string(k))
@@ -103,14 +105,20 @@ func getTasks(f Filter) []Task {
 			}
 
 			if strings.Contains(t.Title, f.Title) || strings.Contains(t.Description, f.Description) || strings.Contains(t.Status, f.Status){
-				fmt.Println(result)
+				fmt.Println("hello world", t.Title)
 				result = append(result, t)
-				return nil
-			} 
+				matchFound = true
+			} else {
+				fmt.Println(f.Title, t.Title)
+			}
+			return nil
 		
 			
-			return fmt.Errorf("404: Nothing found.")
 		})
+
+		if !matchFound {
+			return fmt.Errorf("404: Nothing found.")
+		}
 		return nil
 	})
 

@@ -70,7 +70,7 @@ func fetchTasksApi(c *gin.Context) {
 	j := make(chan []byte)
 	go func() {
 		defer close(j)
-		var f Filter
+		f := newFilter()
 		t, d, s := c.Query("title"), c.Query("description"), c.Query("status")
 
 		if t != "" {
