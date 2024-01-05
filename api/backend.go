@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"strings"
+	"strconv"
 
 )
 
@@ -92,24 +93,22 @@ func getTasks(f Filter) []Task {
 		b := tx.Bucket([]byte("testBucket"))
 		b.ForEach(func(k, v []byte) error {
 			//Logic where we check if it matches the filter
+			id, _ := strconv.Atoi(string(k))
 			d := decode(v)
 			t := Task{
+				Id: id,
 				Title: d[0],
 				Description: d[1],
 				Status: d[2],
 			}
 
-			if strings.Contains(t.Title, f.Title){
+			if strings.Contains(t.Title, f.Title) || strings.Contains(t.Description, f.Description) || strings.Contains(t.Status, f.Status){
+				fmt.Println(result)
 				result = append(result, t)
 				return nil
-			} else if strings.Contains(t.Description, f.Description){
-				result = append(result, t)
-				return nil
-			} else if strings.Contains(t.Status, f.Status){
-				result = append(result, t)
-				return nil
-			}
-
+			} 
+		
+			
 			return fmt.Errorf("404: Nothing found.")
 		})
 		return nil
@@ -118,6 +117,7 @@ func getTasks(f Filter) []Task {
 	if viewErr != nil {
 		fmt.Println(viewErr)
 	}
+	fmt.Println(result)
 
 	return result
 }
