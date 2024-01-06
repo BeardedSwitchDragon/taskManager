@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"strings"
+	"errors"
 	"strconv"
 
 )
@@ -48,7 +49,7 @@ func writeDB(t Task) {
 	})
 }
 
-func getTask(Id int)  Task{
+func getTask(Id int)  (Task, error){
 	db, e := bolt.Open("test.db", 0600, nil)
 	if e != nil {
 		fmt.Println(e)
@@ -62,7 +63,9 @@ func getTask(Id int)  Task{
 		b := tx.Bucket([]byte("testBucket"))
 		v := b.Get([]byte{byte(Id)})
 		data := decode(v)
-
+		if len(data) <= 0 {
+			return errors.New("404")
+		}
 		(*tPointer).Title = data[0]
 		(*tPointer).Description = data[1]
 		(*tPointer).Status = data[2]
@@ -73,11 +76,11 @@ func getTask(Id int)  Task{
 	t.Id = Id
 
 	if viewErr != nil {
-		fmt.Println(viewErr)
+		return t, viewErr
 	}
 	
 
-	return t
+	return t, viewErr
 }
 
 func getTasks(f Filter) []Task {

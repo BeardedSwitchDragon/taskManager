@@ -1,5 +1,5 @@
 package main
-
+import "fmt"
 type Task struct {
 	Id int `json:"id"`
 	Title string `json:"title"`
@@ -13,8 +13,9 @@ type Filter struct {
 	Status string
 }
 
-func (f Filter) unspecified() {
+func (f *Filter) unspecified() {
 	f.Title, f.Description, f.Status = "", "", ""
+	fmt.Println(f.Title)
 }
 
 
