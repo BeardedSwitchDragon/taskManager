@@ -97,7 +97,7 @@ func getTasks(f Filter) []Task {
 		matchFound := false
 		b.ForEach(func(k , v []byte) error {
 			//Logic where we check if it matches the filter
-			id := int(k[0] - '0')
+			id := int(k[0])
 			fmt.Println("the id", id)
 			d := decode(v)
 			t := Task{
