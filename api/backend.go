@@ -7,7 +7,7 @@ import (
 	"encoding/gob"
 	"strings"
 	"errors"
-	"strconv"
+	// "strconv"
 
 )
 
@@ -43,7 +43,7 @@ func writeDB(t Task) {
 	db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("testBucket"))
 		IdBS, dBS := []byte{byte(t.Id)}, encode(t.Title, t.Description, t.Status)
-		fmt.Println(IdBS)
+		fmt.Println("!!!!!!", IdBS)
 		e := b.Put(IdBS, dBS)
 		return e
 	})
@@ -95,10 +95,10 @@ func getTasks(f Filter) []Task {
 	viewErr := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("testBucket"))
 		matchFound := false
-
-		b.ForEach(func(k, v []byte) error {
+		b.ForEach(func(k , v []byte) error {
 			//Logic where we check if it matches the filter
-			id, _ := strconv.Atoi(string(k))
+			id := int(k[0] - '0')
+			fmt.Println("the id", id)
 			d := decode(v)
 			t := Task{
 				Id: id,

@@ -10,9 +10,16 @@ import (
 
 func main() {
 	r := gin.Default()
-	//Fetch group, task group respectively.
+	//Fetch group, task group, admin group respectively.
 	fg := r.Group("/fetch")
 	tg := r.Group("/task")
+	ag := r.Group("/admin")
+
+	ag.POST("/newdb", func(c *gin.Context) {
+		go func() {
+			createDB()
+		}()
+	})
 
 	fg.GET("/", fetchTasksApi)
 
@@ -125,6 +132,9 @@ func fetchTasksApi(c *gin.Context) {
 		tasks := getTasks(f)
 
 		data, _ := json.Marshal(tasks)
+		if len(tasks) == 0 {
+			data = []byte("[]")
+		}
 		j <- data
 		
 	}()
