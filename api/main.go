@@ -40,16 +40,24 @@ func main() {
 
 //deletes task function
 func deleteTaskApi(c *gin.Context) {
+	m := make(chan string)
+	defer close(m)
+	s := make(chan int)
+	
 	go func() {
+		
 		id, _ := strconv.Atoi(c.Param("id"))
 		err := deleteTask(id)
 		if err != nil {
 
-			c.String(http.StatusBadRequest, "something went wrnog")
+			s <- http.StatusBadRequest
+			m <- "something went wrong!"
 		} else {
-			c.String(http.StatusOK, "successfully deleted")
+			s <- http.StatusOK
+			m <- "successfully deleted!"
 		}
 	}()
+	c.String(<-s, <-m)
 
 }
 

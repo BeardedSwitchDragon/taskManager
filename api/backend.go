@@ -7,7 +7,7 @@ import (
 	"encoding/gob"
 	"strings"
 	"errors"
-	// "strconv"
+	"strconv"
 
 )
 
@@ -17,7 +17,7 @@ func createDB() *bolt.DB {
 	if e != nil {
 		fmt.Println(e)
 	}
-
+	defer db.Close()
 	//Creates a bucket - a set of key value pairs.
 	db.Update(func(tx *bolt.Tx) error {
 		_, e := tx.CreateBucket([]byte("testBucket"))
@@ -40,6 +40,7 @@ func writeDB(t Task) {
 	if e != nil {
 		fmt.Println(e)
 	}
+	defer db.Close()
 	db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("testBucket"))
 		IdBS, dBS := []byte{byte(t.Id)}, encode(t.Title, t.Description, t.Status)
@@ -138,9 +139,11 @@ func deleteTask(Id int) error {
 	if e != nil {
 		fmt.Println(e)
 	}
+	defer db.Close()
 	deleteErr := db.Update(func(tx *bolt.Tx) error {
 		//Deletes bucket item given Id parameter in parent function
-		return tx.Bucket([]byte("testBucket")).Delete([]byte{byte(Id)})
+		idBytes := []byte(strconv.Itoa(Id))
+		return tx.Bucket([]byte("testBucket")).Delete(idBytes)
 	})
 
 	if deleteErr != nil {
