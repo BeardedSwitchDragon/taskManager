@@ -7,7 +7,7 @@ import (
 	"encoding/gob"
 	"strings"
 	"errors"
-	"strconv"
+	// "strconv"
 
 )
 
@@ -142,8 +142,8 @@ func deleteTask(Id int) error {
 	defer db.Close()
 	deleteErr := db.Update(func(tx *bolt.Tx) error {
 		//Deletes bucket item given Id parameter in parent function
-		idBytes := []byte(strconv.Itoa(Id))
-		return tx.Bucket([]byte("testBucket")).Delete(idBytes)
+		
+		return tx.Bucket([]byte("testBucket")).Delete([]byte{byte(Id)})
 	})
 
 	if deleteErr != nil {
