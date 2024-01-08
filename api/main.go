@@ -10,9 +10,8 @@ import (
 
 func main() {
 	r := gin.Default()
-	//Fetch group, task group, admin group respectively.
-	fg := r.Group("/fetch")
-	tg := r.Group("/task")
+	//task group, admin group respectively.
+	tg := r.Group("/tasks")
 	ag := r.Group("/admin")
 
 	ag.POST("/newdb", func(c *gin.Context) {
@@ -21,7 +20,8 @@ func main() {
 		}()
 	})
 
-	fg.GET("/", fetchTasksApi)
+	tg.GET("/", fetchTasksApi)
+	tg.GET("/:id", fetchTaskApi)
 
 	//DELETE a certain task
 	tg.DELETE("/:id", deleteTaskApi)
@@ -35,6 +35,24 @@ func main() {
 
 	select {}
 
+}
+
+func fetchTaskApi(c *gin.Context) {
+	j := make(chan []byte)
+	defer close(j)
+	go func() {
+		id, _ := strconv.Atoi(c.Param("id"))
+		t, e := getTask(id)
+
+		if e != nil {
+			fmt.Println(e)
+		} else {
+			data, _ := json.Marshal(t)
+			j <- data
+		}
+	}()
+
+	c.Data(200, "application/json; charset=utf-8", <-j)
 }
 
 
