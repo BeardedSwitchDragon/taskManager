@@ -80,17 +80,18 @@ func deleteTaskApi(c *gin.Context) {
 }
 
 func createTaskApi(c *gin.Context) {
+	t := make(chan Task)
 	go func() {
 		// title, d, s := c.Query("title"), c.Query("description"), c.Query("status")
 		fmt.Println("hi")
 		var id int
-		var t Task
+		var localTask Task
 		var err error
 		if c.Query("id") != "" {
 			//Logic if a task already exists (updates existing one)
 			
 			id, _ = strconv.Atoi(c.Query("id"))
-			t, err = getTask(id)
+			localTask, err = getTask(id)
 
 			if err != nil {
 				c.String(http.StatusNotFound, "404 Not Found: The requested resource was not found.")
@@ -98,13 +99,13 @@ func createTaskApi(c *gin.Context) {
 			}
 
 			if c.Query("title") != "" {
-				t.Title = c.Query("title")
+				localTask.Title = c.Query("title")
 			}
 			if c.Query("description") != "" {
-				t.Description = c.Query("description")
+				localTask.Description = c.Query("description")
 			} 
 			if c.Query("status") != "" {
-				t.Status = c.Query("status")
+				localTask.Status = c.Query("status")
 			}
 			c.String(http.StatusOK, "successfully updated")
 
@@ -115,20 +116,21 @@ func createTaskApi(c *gin.Context) {
 			empty.unspecified()
 			existingTasks := getTasks(empty)
 			id = len(existingTasks) + 1
-			t = Task {
+			localTask = Task {
 				Id: id,
 				Title: c.Query("title"),
 				Description: c.Query("description"),
 				Status: c.Query("status"),
 			}
-			writeDB(t)
-			c.String(http.StatusOK, "successfully created task")
+			
 		}
-		
-		
-		
 
+		t <- localTask
+		
 	}()
+
+	writeDB(<-t)
+	c.String(http.StatusOK, "successfully created task")
 	
 }
 

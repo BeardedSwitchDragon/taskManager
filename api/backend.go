@@ -55,6 +55,7 @@ func getTask(Id int)  (Task, error){
 	if e != nil {
 		fmt.Println(e)
 	}
+	defer db.Close()
 
 	//Creates pointer so task can be referred to in anonymous function
 	var t Task
