@@ -9,20 +9,19 @@ import (
 	"net/url"
 )
 
-//redefining the Task type
+// redefining the Task type
 type Task struct {
-	Id int `json:"id"`
-	Title string `json:"title"`
+	Id          int    `json:"id"`
+	Title       string `json:"title"`
 	Description string `json:"description"`
-	Status string `json:"status"`
+	Status      string `json:"status"`
 }
 
 type PageData struct {
-	
 	Tasks []Task
 }
 
-//Two seperate instances are being run - the api and the webpage. Both are being run locally on the same machine.
+// Two seperate instances are being run - the api and the webpage. Both are being run locally on the same machine.
 var apiUrl string
 
 var templates *template.Template
@@ -48,24 +47,22 @@ func main() {
 	r.GET("/newtask", taskForm)
 	r.POST("/tasks", newTaskFromForm)
 
-	
 	r.Run(":8000")
 
 }
 
 func taskForm(c *gin.Context) {
-	
+
 	c.File("static/createtask.html")
 }
 
 func newTaskFromForm(c *gin.Context) {
-	fmt.Println("UUUUUUUHHHH")
 	turl := make(chan string)
 	defer close(turl)
 	go func() {
 
 		turl <- fmt.Sprintf(apiUrl+"tasks/?title=%s&description=%s&status=incomplete",
-		url.QueryEscape(c.PostForm("title")), url.QueryEscape(c.PostForm("description")))
+			url.QueryEscape(c.PostForm("title")), url.QueryEscape(c.PostForm("description")))
 
 	}()
 	resp, err := http.PostForm(<-turl, url.Values{})
@@ -78,39 +75,49 @@ func newTaskFromForm(c *gin.Context) {
 	fmt.Println(resp.Status, string(body))
 }
 
+// func editTaskForm(c *gin.Context) {
+
+// }
+
+
 func index(c *gin.Context) {
 	tasks := make(chan []Task)
 	defer close(tasks)
-	go func() {
-		resp, err := http.Get(apiUrl + "tasks")
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		defer resp.Body.Close()
-
-		// Check if the response status code is successful (2xx)
-		if resp.StatusCode != http.StatusOK {
-			c.JSON(resp.StatusCode, gin.H{"error": fmt.Sprintf("API request failed with status code %d", resp.StatusCode)})
-			return
-		}
-
-		var tempTasks []Task
-		err = json.NewDecoder(resp.Body).Decode(&tempTasks)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		fmt.Println(tempTasks)
-
-		tasks <- tempTasks
-
-	}()
+	tempTasks := returnTasksAsJSON(c)
+	go func(ts []Task) {
+		tasks <- ts
+	}(tempTasks)
 	err := templates.ExecuteTemplate(c.Writer, "index.html", PageData{Tasks: <-tasks})
 	if err != nil {
 		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 	}
 	// c.HTML(http.StatusOK, "index", gin.H{"Tasks": <-tasks})
 
-	
+}
+
+
+func returnTasksAsJSON(c *gin.Context) []Task {
+	resp, err := http.Get(apiUrl + "tasks")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		
+	}
+	defer resp.Body.Close()
+
+	// Check if the response status code is successful (2xx)
+	if resp.StatusCode != http.StatusOK {
+		c.JSON(resp.StatusCode, gin.H{"error": fmt.Sprintf("API request failed with status code %d", resp.StatusCode)})
+		
+	}
+
+	var tempTasks []Task
+	err = json.NewDecoder(resp.Body).Decode(&tempTasks)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		
+	}
+	fmt.Println(tempTasks)
+
+	return tempTasks
+
 }
