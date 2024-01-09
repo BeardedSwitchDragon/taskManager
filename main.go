@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"html/template"
 	"net/http"
+	"net/url"
 )
 
 //redefining the Task type
@@ -44,9 +45,37 @@ func main() {
 	}
 	// r.SetHTMLTemplate(tmpl)
 	r.GET("/", index)
+	r.GET("/newtask", taskForm)
+	r.POST("/tasks", newTaskFromForm)
+
 	
 	r.Run(":8000")
 
+}
+
+func taskForm(c *gin.Context) {
+	
+	c.File("static/createtask.html")
+}
+
+func newTaskFromForm(c *gin.Context) {
+	fmt.Println("UUUUUUUHHHH")
+	turl := make(chan string)
+	defer close(turl)
+	go func() {
+
+		turl <- fmt.Sprintf(apiUrl+"tasks/?title=%s&description=%s&status=incomplete",
+		url.QueryEscape(c.PostForm("title")), url.QueryEscape(c.PostForm("description")))
+
+	}()
+	resp, err := http.PostForm(<-turl, url.Values{})
+	if err != nil {
+		panic(err)
+	}
+
+	body := make([]byte, 0)
+	_, _ = resp.Body.Read(body)
+	fmt.Println(resp.Status, string(body))
 }
 
 func index(c *gin.Context) {
