@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 // redefining the Task type
@@ -19,6 +20,7 @@ type Task struct {
 
 type PageData struct {
 	Tasks []Task
+
 }
 
 // Two seperate instances are being run - the api and the webpage. Both are being run locally on the same machine.
@@ -46,6 +48,9 @@ func main() {
 	r.GET("/", index)
 	r.GET("/newtask", taskForm)
 	r.POST("/tasks", newTaskFromForm)
+	r.POST("/edit/:id", editTaskFromForm)
+	r.GET("/edit/:id", editForm)
+	
 
 	r.Run(":8000")
 
@@ -75,9 +80,32 @@ func newTaskFromForm(c *gin.Context) {
 	fmt.Println(resp.Status, string(body))
 }
 
-// func editTaskForm(c *gin.Context) {
+func editForm(c *gin.Context) {
+	t := make(chan Task)
+	defer close(t)
+	go func() {
+		id, _ := strconv.Atoi(c.Query("id"))
+		t <- returnTasksAsJSON(c)[id]
+	}()
+	err := templates.ExecuteTemplate(c.Writer, "edittaskform.html", <-t)
+	if err != nil {
+		panic(err)
+	}
+}
 
-// }
+func editTaskFromForm(c *gin.Context) {
+	turl := make(chan string)
+	defer close(turl)
+	go func() {
+		id, _ := strconv.Atoi(c.Query("id"))
+		turl <-  fmt.Sprintf(apiUrl+"tasks/?id=%d&title=%s&description=%s&status=incomplete",id, url.QueryEscape(c.PostForm("title")), url.QueryEscape(c.PostForm("description")))
+		// url.QueryEscape(id, c.PostForm("title")), url.QueryEscape(c.PostForm("description")))
+	}()
+	_, err := http.PostForm(<-turl, url.Values{})
+	if err != nil {
+		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+	}
+}
 
 
 func index(c *gin.Context) {

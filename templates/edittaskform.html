@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
@@ -9,29 +7,26 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>Welcome to Task Manager!</title>
+        <title>Edit Task</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="">
     </head>
     <body>
-        <h1>Task Manager!</h1>
         <!--[if lt IE 7]>
             <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="#">upgrade your browser</a> to improve your experience.</p>
         <![endif]-->
-        <h2><a href="newtask">Create a task</a></h2>
-        <br>
-        <h2>All your current Tasks:</h2>
-        {{range .Tasks}}
-        
-            <div>
-                <h3>{{.Title}}</h3>
-                <p>{{.Description}}</p>
-                <p> <b>{{.Status}}</b> </p>
-                <p><a href="edit/{{.Id}}">Edit this task</a></p>
-            </div>
-        {{end}}
-        
-        <script src="" async defer></script>
+        <form action="/edit/{{.Id}}" method="post">
+            <label for="Title">Title:</label>
+            <input type="text" id="title" name="title" placeholder={{.Title}} >
+
+            <br>
+
+            <label for="Description"> Description:</label>
+            <input type="text" name="description" id="description" placeholder={{.Description}} >
+
+            <button type="submit">submit edit</button>
+        </form>
+       
     </body>
 </html>
