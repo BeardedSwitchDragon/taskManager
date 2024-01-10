@@ -91,20 +91,22 @@ func editForm(c *gin.Context) {
 	if err != nil {
 		panic(err)
 	}
+	
 }
 
 func editTaskFromForm(c *gin.Context) {
 	turl := make(chan string)
 	defer close(turl)
 	go func() {
-		id, _ := strconv.Atoi(c.Query("id"))
-		turl <-  fmt.Sprintf(apiUrl+"tasks/?id=%d&title=%s&description=%s&status=incomplete",id, url.QueryEscape(c.PostForm("title")), url.QueryEscape(c.PostForm("description")))
+		
+		turl <-  fmt.Sprintf(apiUrl+"tasks/?id=%s&title=%s&description=%s&status=incomplete",url.QueryEscape(c.Param("id")), url.QueryEscape(c.PostForm("title")), url.QueryEscape(c.PostForm("description")))
 		// url.QueryEscape(id, c.PostForm("title")), url.QueryEscape(c.PostForm("description")))
 	}()
 	_, err := http.PostForm(<-turl, url.Values{})
 	if err != nil {
 		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 	}
+	c.Redirect(http.StatusFound, "/")
 }
 
 
