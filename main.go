@@ -45,15 +45,33 @@ func main() {
 		panic(te)
 	}
 	// r.SetHTMLTemplate(tmpl)
+	rg := r.Group("/tasks")
 	r.GET("/", index)
 	r.GET("/newtask", taskForm)
-	r.POST("/tasks", newTaskFromForm)
+	rg.POST("/", newTaskFromForm)
 	r.POST("/edit/:id", editTaskFromForm)
 	r.GET("/edit/:id", editForm)
+	rg.POST("/delete/:id", deleteTask)
 	
 
 	r.Run(":8000")
 
+}
+
+func deleteTask(c *gin.Context) {
+	durl := make(chan string)
+	go func() {
+		durl <- fmt.Sprintf(apiUrl+"tasks/%s", c.Param("id"))
+	}()
+	req, err := http.NewRequest("DELETE", <-durl, nil)
+	if err != nil {
+		panic(err)
+	}
+	client := http.Client{}
+	_, e := client.Do(req)
+	if e != nil {
+		fmt.Println(err)
+	}
 }
 
 func taskForm(c *gin.Context) {
