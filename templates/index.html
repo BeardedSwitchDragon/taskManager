@@ -27,7 +27,12 @@
             <div>
                 <h3>{{.Title}}</h3>
                 <p>{{.Description}}</p>
-                <p> <b>{{.Status}}</b> </p>
+                <form action="tasks/statuschange/{{.Id}}" method="post">
+                    <button type="submit">
+                        <b>{{.Status}}</b>
+                    </button>
+                </form>
+                
                 <p><a href="edit/{{.Id}}">Edit this task</a></p>
                 <form action="/tasks/delete/{{.Id}}" method="post">
                     <button type="submit">

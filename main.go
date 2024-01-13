@@ -45,13 +45,17 @@ func main() {
 		panic(te)
 	}
 	// r.SetHTMLTemplate(tmpl)
-	rg := r.Group("/tasks")
+	tg := r.Group("/tasks")
 	r.GET("/", index)
 	r.GET("/newtask", taskForm)
-	rg.POST("/", newTaskFromForm)
+	
 	r.POST("/edit/:id", editTaskFromForm)
 	r.GET("/edit/:id", editForm)
-	rg.POST("/delete/:id", deleteTask)
+
+
+	tg.POST("/", newTaskFromForm)
+	tg.POST("/delete/:id", deleteTask)
+	tg.POST("/statuschange/:id", statusChange)
 	
 
 	r.Run(":8000")
@@ -72,11 +76,37 @@ func deleteTask(c *gin.Context) {
 	if e != nil {
 		fmt.Println(err)
 	}
+	c.Redirect(http.StatusFound, "/")
 }
 
 func taskForm(c *gin.Context) {
 
 	c.File("static/createtask.html")
+}
+
+func statusChange(c *gin.Context) {
+	usurl := make(chan string, 1)
+	id, _ := strconv.Atoi(c.Param("id"))
+	fmt.Println(id)
+	t := returnTaskAsJSON(c, id)
+	defer close(usurl)
+	go func(t Task) {
+		
+		fmt.Println(t)
+		var newStatus string
+		if t.Status == "incomplete" {
+			newStatus = "complete"
+		} else {
+			newStatus = "incomplete"
+		}
+		usurl <- fmt.Sprintf(apiUrl+"tasks/?status=%s&id=%d", newStatus, id)
+	}(t)
+	statusurl := <- usurl
+	_, err := http.PostForm(statusurl, url.Values{})
+	if err != nil {
+		panic(err)
+	}
+	c.Redirect(http.StatusFound, "/")
 }
 
 func newTaskFromForm(c *gin.Context) {
@@ -96,14 +126,15 @@ func newTaskFromForm(c *gin.Context) {
 	body := make([]byte, 0)
 	_, _ = resp.Body.Read(body)
 	fmt.Println(resp.Status, string(body))
+	c.Redirect(http.StatusFound, "/")
 }
 
 func editForm(c *gin.Context) {
 	t := make(chan Task)
 	defer close(t)
 	go func() {
-		id, _ := strconv.Atoi(c.Query("id"))
-		t <- returnTasksAsJSON(c)[id]
+		id, _ := strconv.Atoi(c.Param("id"))
+		t <- returnTaskAsJSON(c, id)
 	}()
 	err := templates.ExecuteTemplate(c.Writer, "edittaskform.html", <-t)
 	if err != nil {
@@ -117,7 +148,7 @@ func editTaskFromForm(c *gin.Context) {
 	defer close(turl)
 	go func() {
 		
-		turl <-  fmt.Sprintf(apiUrl+"tasks/?id=%s&title=%s&description=%s&status=incomplete",url.QueryEscape(c.Param("id")), url.QueryEscape(c.PostForm("title")), url.QueryEscape(c.PostForm("description")))
+		turl <-  fmt.Sprintf(apiUrl+"tasks/?id=%s&title=%s&description=%s&status=%s",url.QueryEscape(c.Param("id")), url.QueryEscape(c.PostForm("title")), url.QueryEscape(c.PostForm("description")), url.QueryEscape(c.PostForm("status")))
 		// url.QueryEscape(id, c.PostForm("title")), url.QueryEscape(c.PostForm("description")))
 	}()
 	_, err := http.PostForm(<-turl, url.Values{})
@@ -168,4 +199,29 @@ func returnTasksAsJSON(c *gin.Context) []Task {
 
 	return tempTasks
 
+}
+
+func returnTaskAsJSON(c *gin.Context, id int) Task {
+	fmt.Println("return task")
+	fmt.Println(id)
+	resp, err := http.Get(fmt.Sprintf(apiUrl + "tasks/%d", id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		
+	}
+	defer resp.Body.Close()
+
+	// Check if the response status code is successful (2xx)
+	if resp.StatusCode != http.StatusOK {
+		c.JSON(resp.StatusCode, gin.H{"error": fmt.Sprintf("API request failed with status code %d", resp.StatusCode)})
+		
+	}
+	var t Task
+	err = json.NewDecoder(resp.Body).Decode(&t)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		
+	}
+	return t
+	
 }

@@ -64,6 +64,11 @@ func getTask(Id int)  (Task, error){
 	viewErr := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("testBucket"))
 		v := b.Get([]byte{byte(Id)})
+		fmt.Printf("Key: %d, Value: %v\n", Id, v)
+		if v == nil {
+			return errors.New("Key not found")
+		}
+		
 		data := decode(v)
 		if len(data) <= 0 {
 			return errors.New("404")
@@ -99,6 +104,7 @@ func getTasks(f Filter) []Task {
 		matchFound := false
 		b.ForEach(func(k , v []byte) error {
 			//Logic where we check if it matches the filter
+			fmt.Println("key: ", k)
 			id := int(k[0])
 			fmt.Println("the id", id)
 			d := decode(v)
