@@ -20,7 +20,7 @@ func createDB() *bolt.DB {
 	defer db.Close()
 	//Creates a bucket - a set of key value pairs.
 	db.Update(func(tx *bolt.Tx) error {
-		_, e := tx.CreateBucket([]byte("testBucket"))
+		_, e := tx.CreateBucketIfNotExists([]byte("testBucket"))
 		if e != nil {
 			fmt.Println(e)
 			
@@ -42,7 +42,7 @@ func writeDB(t Task) {
 	}
 	defer db.Close()
 	db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("testBucket"))
+		b, _ := tx.CreateBucketIfNotExists([]byte("testBucket"))
 		IdBS, dBS := []byte{byte(t.Id)}, encode(t.Title, t.Description, t.Status)
 		fmt.Println("!!!!!!", IdBS)
 		e := b.Put(IdBS, dBS)
@@ -61,8 +61,8 @@ func getTask(Id int)  (Task, error){
 	var t Task
 	tPointer := &t
 
-	viewErr := db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("testBucket"))
+	viewErr := db.Update(func(tx *bolt.Tx) error {
+		b, _ := tx.CreateBucketIfNotExists([]byte("testBucket"))
 		v := b.Get([]byte{byte(Id)})
 		fmt.Printf("Key: %d, Value: %v\n", Id, v)
 		if v == nil {
@@ -99,8 +99,11 @@ func getTasks(f Filter) []Task {
 	defer db.Close()
 
 	var result []Task
-	viewErr := db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("testBucket"))
+	viewErr := db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte("testBucket"))
+		if err != nil {
+			panic(err)
+		}
 		matchFound := false
 		b.ForEach(func(k , v []byte) error {
 			//Logic where we check if it matches the filter
@@ -149,8 +152,9 @@ func deleteTask(Id int) error {
 	defer db.Close()
 	deleteErr := db.Update(func(tx *bolt.Tx) error {
 		//Deletes bucket item given Id parameter in parent function
-		
-		return tx.Bucket([]byte("testBucket")).Delete([]byte{byte(Id)})
+		b, e := tx.CreateBucketIfNotExists([]byte("testBucket"))
+		b.Delete([]byte{byte(Id)})
+		return e
 	})
 
 	if deleteErr != nil {
