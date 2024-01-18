@@ -1,16 +1,18 @@
 package main
+
 import "fmt"
+
 type Task struct {
-	Id int `json:"id"`
-	Title string `json:"title"`
+	Id          int    `json:"id"`
+	Title       string `json:"title"`
 	Description string `json:"description"`
-	Status string `json:"status"`
+	Status      string `json:"status"`
 }
 
 type Filter struct {
-	Title string
+	Title       string
 	Description string
-	Status string
+	Status      string
 }
 
 func (f *Filter) unspecified() {
@@ -18,12 +20,11 @@ func (f *Filter) unspecified() {
 	fmt.Println(f.Title)
 }
 
-
-//Uses undefined character as default that is universally understood to be an invalid character type.
+// Uses undefined character as default that is universally understood to be an invalid character type.
 func newFilter() Filter {
 	return Filter{
-		Title: "𑨩",
+		Title:       "𑨩",
 		Description: "𑨩",
-		Status: "𑨩",
+		Status:      "𑨩",
 	}
-} 
+}

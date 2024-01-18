@@ -1,17 +1,16 @@
 package main
 
 import (
-	"github.com/boltdb/bolt"
-	"fmt"
 	"bytes"
 	"encoding/gob"
-	"strings"
 	"errors"
+	"fmt"
+	"github.com/boltdb/bolt"
+	"strings"
 	// "strconv"
-
 )
 
-//Initialize database
+// Initialize database
 func createDB() *bolt.DB {
 	db, e := bolt.Open("test.db", 0600, nil)
 	if e != nil {
@@ -23,7 +22,7 @@ func createDB() *bolt.DB {
 		_, e := tx.CreateBucketIfNotExists([]byte("testBucket"))
 		if e != nil {
 			fmt.Println(e)
-			
+
 			return e
 		}
 		return nil
@@ -33,8 +32,7 @@ func createDB() *bolt.DB {
 
 }
 
-
-//Can double as an update function.
+// Can double as an update function.
 func writeDB(t Task) {
 	db, e := bolt.Open("test.db", 0600, nil)
 	if e != nil {
@@ -50,7 +48,7 @@ func writeDB(t Task) {
 	})
 }
 
-func getTask(Id int)  (Task, error){
+func getTaskDB(Id int) (Task, error) {
 	db, e := bolt.Open("test.db", 0600, nil)
 	if e != nil {
 		fmt.Println(e)
@@ -68,7 +66,7 @@ func getTask(Id int)  (Task, error){
 		if v == nil {
 			return errors.New("Key not found")
 		}
-		
+
 		data := decode(v)
 		if len(data) <= 0 {
 			return errors.New("404")
@@ -85,12 +83,11 @@ func getTask(Id int)  (Task, error){
 	if viewErr != nil {
 		return t, viewErr
 	}
-	
 
 	return t, viewErr
 }
 
-func getTasks(f Filter) []Task {
+func getTasksDB(f Filter) []Task {
 	db, e := bolt.Open("test.db", 0600, nil)
 	if e != nil {
 		fmt.Println(e)
@@ -105,20 +102,20 @@ func getTasks(f Filter) []Task {
 			panic(err)
 		}
 		matchFound := false
-		b.ForEach(func(k , v []byte) error {
+		b.ForEach(func(k, v []byte) error {
 			//Logic where we check if it matches the filter
 			fmt.Println("key: ", k)
 			id := int(k[0])
 			fmt.Println("the id", id)
 			d := decode(v)
 			t := Task{
-				Id: id,
-				Title: d[0],
+				Id:          id,
+				Title:       d[0],
 				Description: d[1],
-				Status: d[2],
+				Status:      d[2],
 			}
 
-			if strings.Contains(t.Title, f.Title) || strings.Contains(t.Description, f.Description) || strings.Contains(t.Status, f.Status){
+			if strings.Contains(t.Title, f.Title) || strings.Contains(t.Description, f.Description) || strings.Contains(t.Status, f.Status) {
 				fmt.Println("hello world", t.Title)
 				result = append(result, t)
 				matchFound = true
@@ -126,8 +123,7 @@ func getTasks(f Filter) []Task {
 				fmt.Println(f.Title, t.Title)
 			}
 			return nil
-		
-			
+
 		})
 
 		if !matchFound {
@@ -144,7 +140,7 @@ func getTasks(f Filter) []Task {
 	return result
 }
 
-func deleteTask(Id int) error {
+func deleteTaskDB(Id int) error {
 	db, e := bolt.Open("test.db", 0600, nil)
 	if e != nil {
 		fmt.Println(e)
@@ -163,8 +159,8 @@ func deleteTask(Id int) error {
 	return nil
 }
 
-//converts string array/slice into byte slice, in order to be passed into writeDB().
-//Alternative approach involves nesting buckets within the database, but I prefer this method.
+// converts string array/slice into byte slice, in order to be passed into writeDB().
+// Alternative approach involves nesting buckets within the database, but I prefer this method.
 func encode(Title string, Description string, Status string) []byte {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)

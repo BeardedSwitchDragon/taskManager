@@ -11,16 +11,15 @@ import (
 )
 
 // redefining the Task type
-type Task struct {
-	Id          int    `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
-}
+// type Task struct {
+// 	Id          int    `json:"id"`
+// 	Title       string `json:"title"`
+// 	Description string `json:"description"`
+// 	Status      string `json:"status"`
+// }
 
 type PageData struct {
 	Tasks []Task
-
 }
 
 // Two seperate instances are being run - the api and the webpage. Both are being run locally on the same machine.
@@ -38,7 +37,11 @@ func main() {
 	// 	status: "incomplete",
 
 	// }
-	apiUrl = "http://0.0.0.0:8080/"
+
+	var taskapi TaskApi
+	taskapi.router = gin.Default()
+	go taskapi.serve()
+	apiUrl = "http://0.0.0.0:9090/"
 	r := gin.Default()
 	templates, te = template.ParseGlob("templates/*.html")
 	if te != nil {
@@ -48,15 +51,13 @@ func main() {
 	tg := r.Group("/tasks")
 	r.GET("/", index)
 	r.GET("/newtask", taskForm)
-	
+
 	r.POST("/edit/:id", editTaskFromForm)
 	r.GET("/edit/:id", editForm)
-
 
 	tg.POST("/", newTaskFromForm)
 	tg.POST("/delete/:id", deleteTask)
 	tg.POST("/statuschange/:id", statusChange)
-	
 
 	r.Run(":8000")
 
@@ -91,7 +92,7 @@ func statusChange(c *gin.Context) {
 	t := returnTaskAsJSON(c, id)
 	defer close(usurl)
 	go func(t Task) {
-		
+
 		fmt.Println(t)
 		var newStatus string
 		if t.Status == "incomplete" {
@@ -101,7 +102,7 @@ func statusChange(c *gin.Context) {
 		}
 		usurl <- fmt.Sprintf(apiUrl+"tasks/?status=%s&id=%d", newStatus, id)
 	}(t)
-	statusurl := <- usurl
+	statusurl := <-usurl
 	_, err := http.PostForm(statusurl, url.Values{})
 	if err != nil {
 		panic(err)
@@ -140,15 +141,15 @@ func editForm(c *gin.Context) {
 	if err != nil {
 		panic(err)
 	}
-	
+
 }
 
 func editTaskFromForm(c *gin.Context) {
 	turl := make(chan string)
 	defer close(turl)
 	go func() {
-		
-		turl <-  fmt.Sprintf(apiUrl+"tasks/?id=%s&title=%s&description=%s&status=%s",url.QueryEscape(c.Param("id")), url.QueryEscape(c.PostForm("title")), url.QueryEscape(c.PostForm("description")), url.QueryEscape(c.PostForm("status")))
+
+		turl <- fmt.Sprintf(apiUrl+"tasks/?id=%s&title=%s&description=%s&status=%s", url.QueryEscape(c.Param("id")), url.QueryEscape(c.PostForm("title")), url.QueryEscape(c.PostForm("description")), url.QueryEscape(c.PostForm("status")))
 		// url.QueryEscape(id, c.PostForm("title")), url.QueryEscape(c.PostForm("description")))
 	}()
 	_, err := http.PostForm(<-turl, url.Values{})
@@ -157,7 +158,6 @@ func editTaskFromForm(c *gin.Context) {
 	}
 	c.Redirect(http.StatusFound, "/")
 }
-
 
 func index(c *gin.Context) {
 	tasks := make(chan []Task)
@@ -174,26 +174,25 @@ func index(c *gin.Context) {
 
 }
 
-
 func returnTasksAsJSON(c *gin.Context) []Task {
 	resp, err := http.Get(apiUrl + "tasks")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		
+
 	}
 	defer resp.Body.Close()
 
 	// Check if the response status code is successful (2xx)
 	if resp.StatusCode != http.StatusOK {
 		c.JSON(resp.StatusCode, gin.H{"error": fmt.Sprintf("API request failed with status code %d", resp.StatusCode)})
-		
+
 	}
 
 	var tempTasks []Task
 	err = json.NewDecoder(resp.Body).Decode(&tempTasks)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		
+
 	}
 	fmt.Println(tempTasks)
 
@@ -204,24 +203,24 @@ func returnTasksAsJSON(c *gin.Context) []Task {
 func returnTaskAsJSON(c *gin.Context, id int) Task {
 	fmt.Println("return task")
 	fmt.Println(id)
-	resp, err := http.Get(fmt.Sprintf(apiUrl + "tasks/%d", id))
+	resp, err := http.Get(fmt.Sprintf(apiUrl+"tasks/%d", id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		
+
 	}
 	defer resp.Body.Close()
 
 	// Check if the response status code is successful (2xx)
 	if resp.StatusCode != http.StatusOK {
 		c.JSON(resp.StatusCode, gin.H{"error": fmt.Sprintf("API request failed with status code %d", resp.StatusCode)})
-		
+
 	}
 	var t Task
 	err = json.NewDecoder(resp.Body).Decode(&t)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		
+
 	}
 	return t
-	
+
 }

@@ -8,11 +8,15 @@ import (
 	"strconv"
 )
 
-func main() {
-	r := gin.Default()
+type TaskApi struct {
+	router *gin.Engine
+}
+
+func (a TaskApi) serve() {
+
 	//task group, admin group respectively.
-	tg := r.Group("/tasks")
-	ag := r.Group("/admin")
+	tg := a.router.Group("/tasks")
+	ag := a.router.Group("/admin")
 
 	ag.POST("/newdb", func(c *gin.Context) {
 		go func() {
@@ -25,11 +29,10 @@ func main() {
 
 	//DELETE a certain task
 	tg.DELETE("/:id", deleteTaskApi)
-	go func() {
-		if err := r.Run(":8080"); err != nil {
-			panic(err)
-		}
-	}()
+
+	if err := a.router.Run(":9090"); err != nil {
+		panic(err)
+	}
 
 	tg.POST("/", createTaskApi)
 
@@ -42,7 +45,7 @@ func fetchTaskApi(c *gin.Context) {
 	defer close(j)
 	go func() {
 		id, _ := strconv.Atoi(c.Param("id"))
-		t, e := getTask(id)
+		t, e := getTaskDB(id)
 
 		if e != nil {
 			fmt.Println(e)
@@ -55,17 +58,16 @@ func fetchTaskApi(c *gin.Context) {
 	c.Data(200, "application/json; charset=utf-8", <-j)
 }
 
-
-//deletes task function
+// deletes task function
 func deleteTaskApi(c *gin.Context) {
 	m := make(chan string)
 	defer close(m)
 	s := make(chan int)
-	
+
 	go func() {
-		
+
 		id, _ := strconv.Atoi(c.Param("id"))
-		err := deleteTask(id)
+		err := deleteTaskDB(id)
 		if err != nil {
 
 			s <- http.StatusBadRequest
@@ -89,9 +91,9 @@ func createTaskApi(c *gin.Context) {
 		var err error
 		if c.Query("id") != "" {
 			//Logic if a task already exists (updates existing one)
-			
+
 			id, _ = strconv.Atoi(c.Query("id"))
-			localTask, err = getTask(id)
+			localTask, err = getTaskDB(id)
 
 			if err != nil {
 				c.String(http.StatusNotFound, "404 Not Found: The requested resource was not found.")
@@ -103,7 +105,7 @@ func createTaskApi(c *gin.Context) {
 			}
 			if c.Query("description") != "" {
 				localTask.Description = c.Query("description")
-			} 
+			}
 			if c.Query("status") != "" {
 				localTask.Status = c.Query("status")
 			}
@@ -112,30 +114,29 @@ func createTaskApi(c *gin.Context) {
 		} else {
 			//Logic if a new Task is to be created
 			var empty Filter
-			
+
 			empty.unspecified()
-			existingTasks := getTasks(empty)
+			existingTasks := getTasksDB(empty)
 			id = len(existingTasks) + 1
-			localTask = Task {
-				Id: id,
-				Title: c.Query("title"),
+			localTask = Task{
+				Id:          id,
+				Title:       c.Query("title"),
 				Description: c.Query("description"),
-				Status: c.Query("status"),
+				Status:      c.Query("status"),
 			}
-			
+
 		}
 
 		t <- localTask
-		
+
 	}()
 
 	writeDB(<-t)
 	c.String(http.StatusOK, "successfully created task")
-	
+
 }
 
-
-//fetch task function
+// fetch task function
 func fetchTasksApi(c *gin.Context) {
 	j := make(chan []byte)
 	go func() {
@@ -157,14 +158,14 @@ func fetchTasksApi(c *gin.Context) {
 			fmt.Println(f)
 		}
 		fmt.Println(f)
-		tasks := getTasks(f)
+		tasks := getTasksDB(f)
 
 		data, _ := json.Marshal(tasks)
 		if len(tasks) == 0 {
 			data = []byte("[]")
 		}
 		j <- data
-		
+
 	}()
 
 	c.Data(200, "application/json; charset=utf-8", <-j)
