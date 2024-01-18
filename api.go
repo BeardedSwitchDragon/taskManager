@@ -29,13 +29,13 @@ func (a TaskApi) serve() {
 
 	//DELETE a certain task
 	tg.DELETE("/:id", deleteTaskApi)
+	tg.POST("/", createTaskApi)
 
 	if err := a.router.Run(":9090"); err != nil {
 		panic(err)
 	}
 
-	tg.POST("/", createTaskApi)
-
+	
 	select {}
 
 }
